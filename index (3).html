@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Try how Known Errors &amp; Workarounds suggests the right known error and workaround inside a Jira Service Management incident. No Jira, no login, nothing to install.">
+<meta property="og:title" content="Try Known Errors &amp; Workarounds">
+<meta property="og:description" content="Try how Known Errors &amp; Workarounds suggests the right known error and workaround inside a Jira Service Management incident. No Jira, no login, nothing to install.">
+<meta property="og:type" content="website">
+<title>Try Known Errors &amp; Workarounds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@500;600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout concept: one green page, a mock Jira incident on the left and the real suggestion panel on the right, sign-up right under the result. */
+:root {
+  --bg: #134E3D;
+  --bg-deep: #0F4234;
+  --cream: #F6F4EC;
+  --cream-line: #E3DFD0;
+  --lime: #C8F560;
+  --ink: #193F34;
+  --ink-soft: #4E655C;
+  --on-green: #F6F4EC;
+  --on-green-soft: #C9D8D0;
+  --paper: #FFFFFF;
+  --jira-text: #172B4D;
+  --jira-soft: #5E6C84;
+  --jira-line: #DFE1E6;
+  --jira-field: #F7F8F9;
+  --jira-neutral: #F1F2F4;
+  --jira-neutral-hover: #DCDFE4;
+  --jira-blue: #0C66E4;
+  --jira-blue-hover: #0055CC;
+  --focus: #C8F560;
+  --ok-bg: #DCFFF1; --ok-fg: #216E4E;
+  --prog-bg: #E9F2FF; --prog-fg: #0055CC;
+  --def-bg: #F1F2F4; --def-fg: #44546F;
+  --note-bg: #FFF7D6; --note-line: #F5CD47; --note-fg: #7F5F01;
+  --err-bg: #FFECEB; --err-fg: #AE2E24;
+  --display: "Grandstander", "Comic Sans MS", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--on-green);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.frame :focus-visible, .dlg :focus-visible { outline-color: #388BFF; }
+.wrap { max-width: 1120px; margin: 0 auto; }
+
+/* Top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; flex-wrap: wrap; }
+.pill { font-family: var(--display); font-weight: 500; background: var(--lime); color: var(--ink); padding: 6px 16px 7px; border-radius: 999px; font-size: 17px; text-decoration: none; letter-spacing: 0.01em; }
+.top-right { display: flex; align-items: center; gap: 16px; font-size: 14px; color: var(--on-green-soft); }
+.top-right a { color: var(--on-green); font-weight: 600; text-decoration-color: var(--lime); text-underline-offset: 3px; }
+
+/* Hero */
+.hero { padding-block: 28px 8px; max-width: 760px; }
+.hero h1 { font-family: var(--display); font-weight: 600; font-size: clamp(34px, 6vw, 58px); line-height: 1.04; margin: 0 0 18px; text-wrap: balance; color: var(--cream); }
+.hero p { margin: 0 0 12px; font-size: 18px; color: var(--on-green-soft); max-width: 62ch; }
+.free-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding: 0; list-style: none; }
+.free-row li { border: 1px solid rgba(246, 244, 236, 0.28); color: var(--cream); border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+
+/* Examples */
+.examples { margin-top: 36px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.examples .label { font-weight: 600; color: var(--cream); margin-right: 4px; font-size: 15px; }
+.chip { font: inherit; font-size: 14px; background: transparent; color: var(--cream); border: 1px solid rgba(246, 244, 236, 0.4); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.chip:hover { border-color: var(--lime); }
+.chip[aria-pressed="true"] { background: var(--lime); color: var(--ink); border-color: var(--lime); }
+
+/* Mock Jira frame */
+.frame { margin-top: 14px; background: var(--paper); color: var(--jira-text); border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(4, 30, 22, 0.35); }
+.frame-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--jira-line); font-size: 14px; color: var(--jira-soft); flex-wrap: wrap; }
+.status { background: var(--prog-bg); color: var(--prog-fg); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+.frame-body { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+.issue { padding: 20px 24px 28px; min-width: 0; }
+.side { border-left: 1px solid var(--jira-line); background: #FBFBFC; padding: 20px 20px 24px; min-width: 0; }
+.field-label { display: block; font-size: 12px; font-weight: 600; color: var(--jira-soft); margin: 0 0 6px; }
+.summary-input { width: 100%; font: inherit; font-size: 22px; font-weight: 600; color: var(--jira-text); border: 2px solid transparent; background: var(--jira-field); border-radius: 6px; padding: 8px 10px; }
+.summary-input:hover, .desc-input:hover { border-color: var(--jira-line); }
+.summary-input:focus, .desc-input:focus { outline: none; border-color: #388BFF; background: #fff; }
+.desc-input { width: 100%; min-height: 96px; resize: vertical; font: inherit; font-size: 15px; color: var(--jira-text); border: 2px solid transparent; background: var(--jira-field); border-radius: 6px; padding: 8px 10px; }
+.field { margin-bottom: 18px; }
+.hint { font-size: 13px; color: var(--jira-soft); margin: 6px 0 0; }
+.labels { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 26px; }
+.label-chip { font-size: 12.5px; font-weight: 600; background: var(--def-bg); color: var(--def-fg); padding: 2px 8px; border-radius: 4px; }
+.no-labels { font-size: 14px; color: var(--jira-soft); }
+.activity h3 { font-size: 14px; margin: 26px 0 10px; color: var(--jira-text); }
+.comments { display: flex; flex-direction: column; gap: 10px; }
+.empty-comments { font-size: 14px; color: var(--jira-soft); margin: 0; }
+.comment { border: 1px solid var(--note-line); background: var(--note-bg); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.comment .tag { display: inline-block; font-size: 12px; font-weight: 600; color: var(--note-fg); margin-bottom: 4px; }
+.comment p { margin: 2px 0; white-space: pre-line; overflow-wrap: anywhere; }
+.comment.public { background: #fff; border-color: var(--jira-line); }
+.comment.public .tag { color: var(--prog-fg); }
+
+/* Suggestion panel */
+.panel-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; }
+.panel-title h2 { font-size: 15px; margin: 0; color: var(--jira-text); }
+.loz { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: none; white-space: nowrap; }
+.loz.ok { background: var(--ok-bg); color: var(--ok-fg); }
+.loz.prog { background: var(--prog-bg); color: var(--prog-fg); }
+.loz.def { background: var(--def-bg); color: var(--def-fg); }
+.results { display: flex; flex-direction: column; gap: 12px; }
+.card { background: #fff; border: 1px solid var(--jira-line); border-radius: 8px; padding: 12px 14px; }
+.card.top-card { border-color: #94C748; box-shadow: 0 0 0 1px #94C748 inset; }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.card-head h4 { margin: 0; font-size: 15px; line-height: 1.35; }
+.ke-id { font-size: 12px; color: var(--jira-soft); font-weight: 600; }
+.why { font-size: 13.5px; margin: 8px 0 0; color: var(--jira-text); }
+.why strong, .steps-title { font-weight: 700; }
+.steps-title { font-size: 13.5px; margin: 8px 0 2px; }
+.steps { margin: 0; padding-left: 20px; font-size: 13.5px; }
+.steps li { margin: 2px 0; }
+.owner { font-size: 13px; color: var(--jira-soft); margin: 6px 0 0; }
+.msg { border-radius: 6px; padding: 8px 10px; font-size: 13.5px; margin: 8px 0 0; }
+.msg p { margin: 2px 0 0; }
+.results > .msg { margin: 0; }
+.warn-msg { background: var(--note-bg); border: 1px solid var(--note-line); color: var(--jira-text); }
+.warn-msg strong { color: var(--note-fg); }
+.card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+.apply { font: inherit; font-size: 14px; font-weight: 600; background: var(--jira-blue); color: #fff; border: 0; border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+.apply:hover { background: var(--jira-blue-hover); }
+.apply.secondary { background: var(--jira-neutral); color: var(--jira-text); }
+.apply.secondary:hover { background: var(--jira-neutral-hover); }
+.apply[disabled] { background: var(--ok-bg); color: var(--ok-fg); cursor: default; }
+.btn-subtle { font: inherit; font-size: 14px; font-weight: 500; background: none; border: 0; border-radius: 4px; color: var(--def-fg); padding: 6px 8px; cursor: pointer; }
+.btn-subtle:hover { background: var(--jira-neutral); color: var(--jira-text); }
+.panel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 12px; }
+.panel-actions:empty { display: none; }
+.panel-actions .noted { flex-basis: 100%; }
+.meta { font-size: 12.5px; color: var(--jira-soft); margin: 12px 0 0; }
+.none { font-size: 14px; margin: 0; }
+.noted { font-size: 13.5px; color: var(--ok-fg); margin: 6px 0 0; }
+.sim-note { margin: 12px 4px 0; font-size: 14px; color: var(--on-green-soft); }
+
+/* Windows (Use workaround, Outdated, Save as known error) */
+.dlg { border: 0; padding: 0; border-radius: 10px; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); color: var(--jira-text); background: #fff; box-shadow: 0 20px 48px rgba(9, 30, 66, 0.3); font-family: var(--body); }
+.dlg::backdrop { background: rgba(9, 30, 66, 0.54); }
+.dlg-inner { display: flex; flex-direction: column; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); }
+.dlg-body { padding: 20px 22px 6px; overflow-y: auto; }
+.dlg h3 { font-size: 20px; line-height: 1.3; margin: 0 0 4px; font-weight: 600; }
+.dlg-sub { margin: 0 0 6px; color: var(--jira-soft); font-size: 14px; }
+.dlg label { display: block; font-size: 12px; font-weight: 600; color: var(--jira-soft); margin: 14px 0 4px; }
+.dlg input, .dlg textarea { width: 100%; font: inherit; font-size: 14px; color: var(--jira-text); border: 2px solid var(--jira-line); background: var(--jira-field); border-radius: 4px; padding: 7px 9px; }
+.dlg textarea { min-height: 76px; resize: vertical; line-height: 1.45; }
+.dlg textarea.tall { min-height: 132px; }
+.dlg input:focus, .dlg textarea:focus { outline: none; border-color: #388BFF; background: #fff; }
+.dlg-hint { font-size: 13px; color: var(--jira-soft); margin: 10px 0 0; }
+.dlg-error { font-size: 13.5px; color: var(--err-fg); background: var(--err-bg); border-radius: 4px; padding: 8px 10px; margin: 12px 0 0; }
+.dlg-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 14px 22px 18px; }
+.btn, .btn-primary { font: inherit; font-size: 14px; font-weight: 600; border: 0; border-radius: 4px; padding: 7px 12px; cursor: pointer; }
+.btn { background: var(--jira-neutral); color: var(--jira-text); }
+.btn:hover { background: var(--jira-neutral-hover); }
+.btn-primary { background: var(--jira-blue); color: #fff; }
+.btn-primary:hover { background: var(--jira-blue-hover); }
+
+/* Message after an action, like the small flags in Jira */
+.toast { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: 16px; z-index: 30; width: min(380px, calc(100vw - 32px)); background: #fff; color: var(--jira-text); border-radius: 8px; border-left: 4px solid #22A06B; box-shadow: 0 8px 28px rgba(9, 30, 66, 0.28); padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 0.18s ease-out, transform 0.18s ease-out; }
+.toast.show { opacity: 1; transform: none; }
+.toast:empty { display: none; }
+
+/* Sign-up */
+.signup { margin-top: 40px; background: var(--cream); color: var(--ink); border-radius: 18px; padding: 28px clamp(20px, 4vw, 40px); display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+.signup h2 { font-family: var(--display); font-weight: 600; font-size: clamp(26px, 4vw, 36px); line-height: 1.1; margin: 0 0 10px; text-wrap: balance; }
+.signup p { margin: 0 0 8px; color: var(--ink-soft); max-width: 60ch; }
+.cta-box { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.cta { display: inline-block; background: var(--ink); color: var(--cream); text-decoration: none; font-weight: 600; padding: 14px 20px; border-radius: 10px; font-size: 16px; }
+.cta:hover { background: #0F2C24; }
+.cta-note { font-size: 13.5px; color: var(--ink-soft); margin: 0; }
+
+.cta-box form { width: 100%; }
+.kit-fields { display: flex; flex-direction: column; gap: 10px; }
+.kit-input { width: 100%; font: inherit; font-size: 16px; padding: 13px 14px; border-radius: 10px; border: 1px solid var(--cream-line); background: #fff; color: var(--ink); }
+.kit-input:focus { outline: 3px solid var(--lime); outline-offset: 1px; border-color: var(--ink); }
+button.cta { border: 0; cursor: pointer; font: inherit; font-weight: 600; text-align: center; width: 100%; }
+button.cta[data-active] { opacity: 0.7; }
+.formkit-alert { list-style: none; margin: 0 0 10px; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+.formkit-alert:empty { display: none; }
+.formkit-alert-error { background: #FDE8E2; color: #9E2A0B; }
+.formkit-alert-success { background: var(--ink); color: var(--cream); padding: 14px 16px; border-radius: 10px; font-weight: 600; margin: 0; }
+.kit-badge { font-size: 12px; color: var(--ink-soft); }
+.kit-optional { display: flex; flex-direction: column; gap: 4px; }
+.kit-label { font-size: 13.5px; font-weight: 600; color: var(--ink-soft); }
+.kit-select { width: 100%; font: inherit; font-size: 15px; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--cream-line); background: #fff; color: var(--ink); }
+.kit-select:focus { outline: 3px solid var(--lime); outline-offset: 1px; border-color: var(--ink); }
+.admin-line { font-size: 15px; }
+.admin-line a { color: var(--ink); font-weight: 600; text-underline-offset: 3px; }
+
+/* Shows up after the first workaround or saved known error: how to get the app */
+.beta-nudge { margin-top: 14px; background: var(--bg); color: var(--cream); border-radius: 10px; padding: 14px 16px; }
+.beta-nudge[hidden] { display: none; }
+.beta-nudge h3 { font-family: var(--display); font-weight: 600; font-size: 19px; line-height: 1.2; margin: 0 0 4px; color: var(--cream); }
+.beta-nudge p { margin: 0 0 12px; font-size: 14px; color: var(--on-green-soft); }
+.nudge-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.nudge-cta { display: inline-block; background: var(--lime); color: var(--ink); font-weight: 600; font-size: 14px; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+.nudge-cta:hover { background: #B6E84A; }
+.nudge-admin { font-size: 14px; font-weight: 500; color: var(--cream); text-underline-offset: 3px; }
+.frame .beta-nudge :focus-visible { outline-color: var(--lime); }
+.nowrap { white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Templates band under the beta sign-up: the second thing to offer */
+.tpl-band { margin-top: 16px; background: var(--bg-deep); border-radius: 14px; padding: 20px clamp(20px, 4vw, 40px); display: flex; align-items: center; justify-content: space-between; gap: 16px 28px; flex-wrap: wrap; }
+.tpl-band h2 { font-family: var(--display); font-weight: 600; font-size: clamp(22px, 3vw, 26px); line-height: 1.15; margin: 0 0 4px; color: var(--cream); }
+.tpl-band p { margin: 0; color: var(--on-green-soft); max-width: 64ch; font-size: 15px; }
+.tpl-cta { display: inline-block; border: 1.5px solid var(--lime); color: var(--cream); font-weight: 600; text-decoration: none; padding: 11px 16px; border-radius: 10px; white-space: nowrap; }
+.tpl-cta:hover { background: rgba(200, 245, 96, 0.12); }
+
+/* How it works */
+.how { margin-top: 48px; }
+.how h2, .facts h2 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw, 32px); margin: 0 0 16px; color: var(--cream); }
+.steps-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 0; margin: 0; list-style: none; counter-reset: s; }
+.steps-row li { border-top: 2px solid var(--lime); padding-top: 12px; color: var(--on-green-soft); counter-increment: s; }
+.steps-row li::before { content: counter(s); display: block; font-family: var(--display); font-size: 28px; color: var(--lime); line-height: 1; margin-bottom: 6px; }
+.steps-row strong { color: var(--cream); display: block; margin-bottom: 4px; }
+.facts { margin-top: 44px; }
+.fact-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; padding: 0; margin: 0; list-style: none; color: var(--on-green-soft); }
+.fact-list li { padding-left: 18px; position: relative; }
+.fact-list li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }
+
+/* Example list */
+details.kelist { margin-top: 40px; background: var(--bg-deep); border-radius: 12px; padding: 14px 18px; }
+details.kelist summary { cursor: pointer; font-weight: 600; color: var(--cream); }
+.ke-table-wrap { overflow-x: auto; margin-top: 12px; }
+.ke-table { width: 100%; border-collapse: collapse; font-size: 14px; color: var(--on-green-soft); min-width: 620px; }
+.ke-table th { text-align: left; color: var(--cream); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid rgba(246, 244, 236, 0.2); }
+.ke-table td { padding: 6px 8px; border-bottom: 1px solid rgba(246, 244, 236, 0.08); vertical-align: top; }
+.ke-table td:first-child { white-space: nowrap; }
+
+footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid rgba(246, 244, 236, 0.18); font-size: 14px; color: var(--on-green-soft); display: flex; flex-direction: column; gap: 6px; }
+footer .mail { user-select: all; color: var(--cream); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .top-right span { display: none; }
+}
+@media (max-width: 860px) {
+  .frame-body { grid-template-columns: minmax(0, 1fr); }
+  .side { border-left: 0; border-top: 1px solid var(--jira-line); }
+  .signup { grid-template-columns: minmax(0, 1fr); }
+  .steps-row { grid-template-columns: minmax(0, 1fr); }
+  .fact-list { grid-template-columns: minmax(0, 1fr); }
+  .summary-input { font-size: 19px; }
+  .dlg-body { padding: 18px 16px 6px; }
+  .dlg-actions { padding: 12px 16px 16px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card { animation: rise 0.18s ease-out; }
+  @keyframes rise { from { transform: translateY(4px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="pill" href="#top" id="top">known errors &amp; workarounds</a>
+    <div class="top-right"><span>Free beta for Jira Service Management Cloud</span><a href="/templates">Free templates</a><a href="#beta">Get beta access</a></div>
+  </header>
+
+  <section class="hero">
+    <h1>Your team already solved this incident once.</h1>
+    <p>Type a ticket the way your users write it. You see which known error matches, why it matches and the workaround, the same way the app shows it inside a Jira Service Management incident.</p>
+    <ul class="free-row" aria-label="What you need">
+      <li>No Jira</li><li>No login</li><li>Nothing to install</li>
+    </ul>
+  </section>
+
+  <div class="examples" role="group" aria-label="Example tickets">
+    <span class="label">Try an example</span>
+    <button class="chip" type="button" aria-pressed="false">VPN error 809</button>
+    <button class="chip" type="button" aria-pressed="false">Outlook keeps asking for the password</button>
+    <button class="chip" type="button" aria-pressed="false">Wi-Fi connected, no internet</button>
+    <button class="chip" type="button" aria-pressed="false">Teams sign-in error</button>
+    <button class="chip" type="button" aria-pressed="false">Access denied on a shared drive</button>
+    <button class="chip" type="button" aria-pressed="false">App cannot reach the database</button>
+  </div>
+
+  <section class="frame" aria-label="Simulated Jira Service Management incident">
+    <div class="frame-bar">
+      <span>IT Help Desk / HD-1042</span>
+      <span class="status">Waiting for support</span>
+    </div>
+    <div class="frame-body">
+      <div class="issue">
+        <div class="field">
+          <label class="field-label" for="summary">Summary</label>
+          <input class="summary-input" id="summary" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label class="field-label" for="description">Description</label>
+          <textarea class="desc-input" id="description" spellcheck="false"></textarea>
+          <p class="hint">Change the text or paste your own ticket. The suggestions update as you type.</p>
+        </div>
+        <div class="field">
+          <span class="field-label" id="labels-label">Labels</span>
+          <div class="labels" id="labels" role="group" aria-labelledby="labels-label"></div>
+        </div>
+        <div class="activity">
+          <h3>Activity</h3>
+          <div class="comments" id="comments"></div>
+        </div>
+      </div>
+      <aside class="side" aria-label="Known error suggestions">
+        <div class="panel-title"><h2 id="panel-heading" tabindex="-1">Known error suggestions</h2></div>
+        <div id="results" class="results" aria-live="polite"></div>
+        <div id="panel-actions" class="panel-actions"></div>
+        <p class="meta" id="meta"></p>
+        <div class="beta-nudge" id="beta-nudge" hidden>
+          <h3>This is how it works in your Jira</h3>
+          <p>The app is free while it's in beta and works on every Jira Service Management Cloud plan.</p>
+          <div class="nudge-actions">
+            <a class="nudge-cta" href="#beta">Get beta access</a>
+            <a class="nudge-admin" href="mailto:?subject=An%20app%20for%20known%20errors%20in%20Jira%20Service%20Management&amp;body=Hi%2C%0D%0A%0D%0AI%20found%20an%20app%20for%20Jira%20Service%20Management%20that%20shows%20the%20matching%20known%20error%20and%20its%20workaround%20right%20in%20the%20ticket.%20You%20can%20try%20it%20in%20your%20browser%20without%20installing%20anything%3A%20https%3A%2F%2Ftry.sproingstudio.com%0D%0A%0D%0AIt%27s%20free%20while%20it%27s%20in%20beta%20and%20goes%20on%20the%20Atlassian%20Marketplace%20in%20January.%20Could%20you%20take%20a%20look%3F%0D%0A">Send this to my Jira admin</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+  <p class="sim-note">This is a simulation of the app with 40 example known errors. Nothing you type leaves your browser.</p>
+
+  <section class="signup" id="beta">
+    <div>
+      <h2>Want this in your Jira?</h2>
+      <p>The app is in free beta and goes on the Atlassian Marketplace in January. Sign up and I'll send you the install link for the beta, a short tip on known errors about every two weeks, and a message when it launches.</p>
+      <p class="admin-line">You also get the known error templates as a PDF. They're free to <a href="/templates">read online</a> too.</p>
+      <p class="admin-line">Can't install apps in your Jira? <a href="mailto:?subject=An%20app%20for%20known%20errors%20in%20Jira%20Service%20Management&amp;body=Hi%2C%0D%0A%0D%0AI%20found%20an%20app%20for%20Jira%20Service%20Management%20that%20shows%20the%20matching%20known%20error%20and%20its%20workaround%20right%20in%20the%20ticket.%20You%20can%20try%20it%20in%20your%20browser%20without%20installing%20anything%3A%20https%3A%2F%2Ftry.sproingstudio.com%0D%0A%0D%0AIt%27s%20free%20while%20it%27s%20in%20beta%20and%20goes%20on%20the%20Atlassian%20Marketplace%20in%20January.%20Could%20you%20take%20a%20look%3F%0D%0A">Send this page to your Jira admin</a>.</p>
+    </div>
+    <div class="cta-box">
+      <form action="https://app.kit.com/forms/10209005/subscriptions" method="post" class="seva-form formkit-form kit-form" data-sv-form="10209005" data-uid="2113ff5e22" data-format="inline" data-version="5" data-options="{&quot;settings&quot;: {&quot;after_subscribe&quot;: {&quot;action&quot;: &quot;message&quot;, &quot;success_message&quot;: &quot;Thanks! Check your inbox, the first email is on its way.&quot;, &quot;redirect_url&quot;: &quot;&quot;}, &quot;recaptcha&quot;: {&quot;enabled&quot;: false}, &quot;return_visitor&quot;: {&quot;action&quot;: &quot;show&quot;, &quot;custom_content&quot;: &quot;&quot;}}, &quot;version&quot;: &quot;5&quot;}">
+        <ul class="formkit-alert formkit-alert-error" data-element="errors" data-group="alert"></ul>
+        <div class="kit-fields" data-element="fields">
+          <label class="sr-only" for="kit-email">Work email</label>
+          <input class="kit-input" id="kit-email" name="email_address" type="email" placeholder="Your work email" autocomplete="email" required>
+          <div class="kit-optional">
+            <label class="kit-label" for="kit-heard">How did you hear about us? (optional)</label>
+            <select class="kit-select" id="kit-heard" name="fields[heard_from]"><option value="">Choose one</option><option>LinkedIn</option><option>Atlassian Community</option><option>Reddit</option><option>Google search</option><option>ChatGPT or another AI tool</option><option>A colleague</option><option>An Atlassian partner</option><option>Other</option></select>
+          </div>
+          <button class="cta" type="submit" data-element="submit"><span>Get beta access</span></button>
+        </div>
+      </form>
+      <p class="cta-note">Free. You can unsubscribe any time.</p>
+      <a class="kit-badge" href="https://kit.com" target="_blank" rel="noopener">Built with Kit</a>
+    </div>
+  </section>
+
+  <section class="tpl-band" aria-labelledby="tpl-band-title">
+    <div>
+      <h2 id="tpl-band-title">Free known error templates</h2>
+      <p>A known error template, seven rules for writing known errors, a post-incident review template, a problem record template and an error code catalog. Read and copy them online, no sign-up needed.</p>
+    </div>
+    <a class="tpl-cta" href="/templates">Read the templates</a>
+  </section>
+
+  <section class="how">
+    <h2>How it works in your Jira</h2>
+    <ol class="steps-row">
+      <li><strong>Write it down once</strong>The person who knows the fix saves it as a known error with its error codes and steps, straight from the ticket with Save as known error. Already have a list in Excel or Google Sheets? Import it as a CSV file.</li>
+      <li><strong>It shows up in the ticket</strong>When a new incident matches, the app suggests it right in the incident and shows why it matches. Weaker matches stay hidden until an agent asks for them.</li>
+      <li><strong>Use it right away</strong>Any agent clicks Use workaround, checks the steps and adds them as an internal note or sends them to the customer as a reply, even if they never saw that error before.</li>
+    </ol>
+  </section>
+
+  <section class="facts">
+    <h2>Good to know</h2>
+    <ul class="fact-list">
+      <li>Works on every Jira Service Management Cloud plan, including Standard.</li>
+      <li>Built on Atlassian Forge. Your data stays in your Atlassian site.</li>
+      <li>No AI. Every suggestion shows the reason it matches.</li>
+      <li>Comes with 40 example known errors so you can test it in minutes.</li>
+      <li>An agent who spots an outdated workaround marks it, and it moves to the top of the list for its owner to check.</li>
+      <li>Every ticket where a workaround was used gets a label like <span class="nowrap">kedb-KE-001</span>, so you can find them all in Jira.</li>
+    </ul>
+  </section>
+
+  <details class="kelist">
+    <summary id="kelist-summary">See the 40 example known errors</summary>
+    <div class="ke-table-wrap"><table class="ke-table"><thead><tr><th>ID</th><th>Known error</th><th>Error codes</th><th>Service</th><th>State</th></tr></thead><tbody id="ke-rows"></tbody></table></div>
+  </details>
+
+  <footer>
+    <span>Known Errors &amp; Workarounds is built by Marek at Sproing Studio. Questions go to <span class="mail">hello@sproingstudio.com</span></span>
+    <span><a href="/templates">Free known error templates</a></span>
+    <span><a href="https://industrious-shade-7ee.notion.site/Privacy-policy-for-Known-Errors-Workarounds-413bb4dc5038813e80c8e237506ebf07" target="_blank" rel="noopener">Privacy policy</a></span>
+    <span>Jira and Jira Service Management are trademarks of Atlassian. This app is not made by Atlassian.</span>
+  </footer>
+
+  <dialog class="dlg" id="use-dlg" aria-labelledby="use-title">
+    <div class="dlg-inner">
+      <div class="dlg-body">
+        <h3 id="use-title">Use workaround</h3>
+        <p class="dlg-sub" id="use-sub"></p>
+        <label for="use-text">Steps (you can change them before you send them)</label>
+        <textarea id="use-text" class="tall"></textarea>
+        <p class="dlg-hint">Add internal note: only agents see it. Reply to customer: the customer gets the steps as a reply.</p>
+        <p class="dlg-error" id="use-error" role="alert" hidden></p>
+      </div>
+      <div class="dlg-actions">
+        <button type="button" class="btn-subtle" data-close>Cancel</button>
+        <button type="button" class="btn" id="use-customer">Reply to customer</button>
+        <button type="button" class="btn-primary" id="use-internal">Add internal note</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="dlg" id="flag-dlg" aria-labelledby="flag-title">
+    <div class="dlg-inner">
+      <div class="dlg-body">
+        <h3 id="flag-title">Mark as outdated?</h3>
+        <p class="dlg-sub">Agents still see it, with a warning, until its owner checks it. It moves to the top of the Known errors list on the app page.</p>
+        <label for="flag-note">What is wrong with it? (optional)</label>
+        <textarea id="flag-note"></textarea>
+      </div>
+      <div class="dlg-actions">
+        <button type="button" class="btn-subtle" data-close>Cancel</button>
+        <button type="button" class="btn-primary" id="flag-confirm">Mark as outdated</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="dlg" id="save-dlg" aria-labelledby="save-heading">
+    <div class="dlg-inner">
+      <div class="dlg-body">
+        <h3 id="save-heading">Save as known error</h3>
+        <p class="dlg-sub" id="save-intro"></p>
+        <label for="save-title">Title (what people see, for example: VPN does not connect, error 809)</label>
+        <input id="save-title" autocomplete="off">
+        <label for="save-codes">Error codes (comma separated, for example: 809, 0x80070005)</label>
+        <input id="save-codes" autocomplete="off">
+        <label for="save-service">Service (for example: VPN, Email, Printing)</label>
+        <input id="save-service" autocomplete="off">
+        <label for="save-symptoms">Also described as (one per line: other ways people describe the same problem)</label>
+        <textarea id="save-symptoms"></textarea>
+        <label for="save-workaround">Workaround (the steps to fix it)</label>
+        <textarea id="save-workaround" class="tall"></textarea>
+        <label for="save-owner">Owner (the person or team responsible, for example: Network team)</label>
+        <input id="save-owner" autocomplete="off">
+        <p class="dlg-error" id="save-error" role="alert" hidden></p>
+      </div>
+      <div class="dlg-actions">
+        <button type="button" class="btn-subtle" data-close>Cancel</button>
+        <button type="button" class="btn-primary" id="save-confirm">Save known error</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script type="module">
+// engine.js
+// Finds the known errors that best match an incident and explains why.
+// Same rules as engine v2 from the spike tests, adapted to real known errors
+// that the IT team writes in the app.
+//
+// Points for each known error:
+//   error code found in the incident text: up to 45 (fewer when several known errors share the code,
+//     at most 12 for generic codes such as HTTP 500 or 503)
+//   service mentioned in the incident text: 10
+//   similar words (field-weighted BM25): 0 to 40
+//   used often by the team (only when the known error already fits the incident): 0 to 8
+
+const STOPWORDS = new Set(
+  'a an the and or but if of to in on at for from by with without is are was were be been it its this that these those as after before since about into than then there their they them we our you your he she his her i me my not no do does did can cannot could should would will just very also all any some several shown seems seem problem issue users user report reports reported error errors code please help show shows showing see sees seen say says said get gets got getting nothing anything something everything out come comes since today yesterday morning now still again when what why how which who'.split(' ')
+);
+
+// Product names that must keep their exact form (Teams is the app, not the word team).
+const PROTECTED = new Set(['teams', 'windows', 'sharepoint', 'onedrive', 'jenkins', 'kubernetes', 'docs', 'sales', 'news']);
+
+function stem(w) {
+  if (PROTECTED.has(w)) return w;
+  if (/^\d/.test(w) || w.includes('_') || w.includes('-') || w.includes(':')) return w;
+  if (w.length > 5 && w.endsWith('ing')) return w.slice(0, -3);
+  if (w.length > 4 && w.endsWith('ed')) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith('es') && !w.endsWith('ses')) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
+  return w;
+}
+
+function words(text) {
+  return (text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9.\-_]+/g, ' ')
+    .split(' ')
+    .map((t) => t.replace(/^[.\-_]+|[.\-_]+$/g, ''))
+    .filter((t) => t.length >= 2 && !STOPWORDS.has(t));
+}
+
+function tokenize(text) {
+  return words(text).map(stem);
+}
+
+// General IT vocabulary: words in the same group mean a similar thing for matching.
+const CONCEPT_GROUPS = {
+  'tls-cert': ['tls', 'ssl', 'certificate', 'cert', 'handshake', 'https', 'expired', 'untrusted', 'x509', 'pkix'],
+  auth: ['login', 'logon', 'log', 'sign', 'signin', 'sign-in', 'authentication', 'authenticate', 'password', 'credentials', 'mfa', 'sso', 'unauthorized', 'locked', 'lockout'],
+  slow: ['slow', 'slowly', 'latency', 'timeout', 'timeouts', 'time', 'lag', 'performance', 'delay', 'late', 'hang', 'freezes'],
+  outage: ['down', 'outage', 'unavailable', 'responding', 'offline', 'dead', 'crash', 'crashed'],
+  access: ['access', 'denied', 'permission', 'permissions', 'forbidden', 'unauthorised', 'lost'],
+  mail: ['email', 'emails', 'mail', 'outlook', 'smtp', 'bounce', 'bounced', 'ndr', 'non-delivery', 'delivered', 'delivery', 'outbox', 'rejected', 'relay'],
+  vpn: ['vpn', 'tunnel', 'remote', 'globalprotect', 'disconnect', 'disconnecting', 'anyconnect'],
+  database: ['database', 'db', 'deadlock', 'deadlocks', 'connection', 'connections', 'query', 'queries', 'sql', 'pool', 'postgres', 'oracle'],
+  sync: ['sync', 'syncing', 'synchronization', 'synchronisation', 'duplicate', 'missing', 'records', 'conflict'],
+  notify: ['push', 'notification', 'notifications', 'alert', 'alerts', 'apns', 'fcm'],
+  print: ['print', 'printer', 'printing', 'queue', 'jobs', 'spooler'],
+  network: ['network', 'wifi', 'wi-fi', 'wireless', 'internet', 'dns', 'ip', 'connectivity', 'dhcp', 'reset'],
+  build: ['build', 'deploy', 'deployment', 'pipeline', 'job', 'artifact', 'artifacts', 'container', 'killed', 'runner', 'oom'],
+};
+const TERM_TO_CONCEPTS = new Map();
+for (const [concept, terms] of Object.entries(CONCEPT_GROUPS)) {
+  for (const t of terms) {
+    const s = stem(t.toLowerCase());
+    if (!TERM_TO_CONCEPTS.has(s)) TERM_TO_CONCEPTS.set(s, new Set());
+    TERM_TO_CONCEPTS.get(s).add('concept:' + concept);
+  }
+}
+function conceptsOf(tokens) {
+  const out = [];
+  for (const t of tokens) {
+    const c = TERM_TO_CONCEPTS.get(t);
+    if (c) for (const x of c) out.push(x);
+  }
+  return out;
+}
+
+const GENERIC_CODES = new Set(['http 500', 'http 502', 'http 503', 'http 504', 'http 401', 'http 403', 'http 429', '500', '502', '503', '504', '401', '403', '429']);
+
+// Turns a code such as "ORA-12541" into a pattern that also matches "ora 12541" or "ORA12541".
+function codeToRegex(code) {
+  const escaped = code
+    .trim()
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/[\s\-_]+/g, '[\\s\\-_]?');
+  return new RegExp('(^|[^a-z0-9])' + escaped + '($|[^a-z0-9])', 'i');
+}
+
+const FIELD_WEIGHTS = { title: 3, symptoms: 2, codes: 1, concepts: 1 };
+const K1 = 1.2;
+const B = 0.6;
+
+function buildDocs(knownErrors) {
+  const codeCount = new Map();
+  for (const ke of knownErrors) {
+    for (const c of ke.codes || []) {
+      const k = c.trim().toLowerCase();
+      if (k) codeCount.set(k, (codeCount.get(k) || 0) + 1);
+    }
+  }
+  const docs = knownErrors.map((ke) => {
+    const title = tokenize(ke.title);
+    const symptoms = tokenize((ke.symptoms || []).join(' '));
+    const codes = tokenize((ke.codes || []).join(' '));
+    const concepts = conceptsOf(title.concat(symptoms));
+    const fields = { title, symptoms, codes, concepts };
+    const tf = {};
+    const len = {};
+    for (const [f, toks] of Object.entries(fields)) {
+      tf[f] = new Map();
+      for (const t of toks) tf[f].set(t, (tf[f].get(t) || 0) + 1);
+      len[f] = toks.length;
+    }
+    const codeInfo = (ke.codes || [])
+      .map((c) => c.trim())
+      .filter(Boolean)
+      .map((c) => {
+        const n = codeCount.get(c.toLowerCase()) || 1;
+        let pts = 45 * (0.25 + 0.75 / n);
+        if (GENERIC_CODES.has(c.toLowerCase())) pts = Math.min(pts, 12);
+        return { code: c, regex: codeToRegex(c), pts, shared: n };
+      });
+    return { ke, tf, len, codeInfo };
+  });
+  const avgLen = {};
+  for (const f of Object.keys(FIELD_WEIGHTS)) {
+    avgLen[f] = docs.reduce((s, d) => s + d.len[f], 0) / (docs.length || 1) || 1;
+  }
+  const df = new Map();
+  for (const d of docs) {
+    const seen = new Set();
+    for (const f of Object.keys(FIELD_WEIGHTS)) for (const t of d.tf[f].keys()) seen.add(t);
+    for (const t of seen) df.set(t, (df.get(t) || 0) + 1);
+  }
+  return { docs, avgLen, df, N: docs.length };
+}
+
+function bm25f(index, doc, queryTerms) {
+  let score = 0;
+  const matched = [];
+  for (const [term, qWeight] of queryTerms) {
+    let tfw = 0;
+    for (const [f, w] of Object.entries(FIELD_WEIGHTS)) {
+      const tf = doc.tf[f].get(term);
+      if (!tf) continue;
+      const norm = 1 - B + (B * doc.len[f]) / index.avgLen[f];
+      tfw += (w * tf) / norm;
+    }
+    if (tfw === 0) continue;
+    const n = index.df.get(term) || 0;
+    const idf = Math.log(1 + (index.N - n + 0.5) / (n + 0.5));
+    score += qWeight * idf * (tfw / (K1 + tfw));
+    if (!term.startsWith('concept:')) matched.push(term);
+  }
+  return { score, matched };
+}
+
+// knownErrors: [{ id, title, codes: [], service, symptoms: [], workaround }]
+// incident: { summary, description }
+// uses: { keId: number of times "Apply workaround" was used }
+// Builds the search index once. It can be kept in memory and reused for many searches
+// until the known errors change.
+function buildIndex(knownErrors) {
+  // Published known errors are suggested. Known errors marked as outdated ("Needs review") are still
+  // suggested, with a warning, until their owner checks them. Draft ones are still being written,
+  // Retired ones are no longer valid (for example the cause was fixed).
+  const published = knownErrors.filter((ke) => !ke.state || ke.state === 'Published' || ke.state === 'Needs review');
+  return Object.assign({ published }, buildDocs(published));
+}
+
+// A suggestion needs at least this many points to be shown right away.
+// Weaker ones are only shown when the agent asks for them (Show more matches).
+const STRONG_POINTS = 20;
+
+// Label for one suggestion, from its points.
+function matchLabel(points) {
+  if (points >= 50) return 'Likely';
+  if (points >= STRONG_POINTS) return 'Possible';
+  return 'Weak';
+}
+
+function rank(knownErrors, incident, uses = {}) {
+  return rankIndex(buildIndex(knownErrors), incident, uses);
+}
+
+// options.exclude: ids of known errors an agent marked as Not relevant for this work item.
+function rankIndex(index, incident, uses = {}, options = {}) {
+  const exclude = options.exclude || new Set();
+  const published = index.published;
+  if (published.length === 0) return { empty: true, suggestions: [], confidence: 'none', total: 0 };
+
+  const text = (incident.summary || '') + ' ' + (incident.description || '');
+  const textLower = ' ' + text.toLowerCase() + ' ';
+  const original = new Map(); // shortened word -> the word as the person wrote it (for the reasons)
+  for (const w of words(text)) if (!original.has(stem(w))) original.set(stem(w), w);
+  const tokens = tokenize(text);
+  const queryTerms = new Map();
+  for (const t of tokens) queryTerms.set(t, 1);
+  for (const c of conceptsOf(tokens)) if (!queryTerms.has(c)) queryTerms.set(c, 0.5);
+
+  // How many text points a typical good match gets depends on how many known errors there are.
+  // With few known errors, word statistics are weaker, so the scale is adjusted.
+  const sHalf = 2 * Math.log(1 + index.N / 2);
+  let maxUses = 0;
+  for (const ke of published) maxUses = Math.max(maxUses, uses[ke.id] || 0);
+
+  const results = index.docs.map((doc) => {
+    const ke = doc.ke;
+    let points = 0;
+    let codePts = 0;
+    const reasons = [];
+
+    for (const c of doc.codeInfo) {
+      if (c.regex.test(text) && c.pts > codePts) codePts = c.pts;
+    }
+    if (codePts > 0) {
+      const c = doc.codeInfo.find((x) => x.pts === codePts && x.regex.test(text));
+      points += codePts;
+      reasons.push(c.shared === 1 ? `error code ${c.code} (only this known error has it)` : `error code ${c.code} (shared by ${c.shared} known errors)`);
+    }
+
+    const service = (ke.service || '').trim().toLowerCase();
+    const serviceHit = service && (textLower.includes(' ' + service + ' ') || textLower.includes(' ' + service + ',') || textLower.includes(' ' + service + '.') || textLower.includes(' ' + service + ':'));
+    if (serviceHit) {
+      points += 10;
+      reasons.push(`service ${ke.service} is mentioned`);
+    }
+
+    const t = bm25f(index, doc, queryTerms);
+    const textPts = (40 * t.score) / (t.score + sHalf);
+    points += textPts;
+    if (t.matched.length > 0) reasons.push('similar words: ' + t.matched.slice(0, 4).map((m) => original.get(m) || m).join(', '));
+
+    const related = codePts > 0 || serviceHit || textPts >= 10;
+    const u = uses[ke.id] || 0;
+    if (related && u > 0 && maxUses > 0) {
+      const p = (8 * Math.log(1 + u)) / Math.log(1 + maxUses);
+      points += p;
+      if (p >= 2) reasons.push(u === 1 ? 'used once before' : `used ${u} times before`);
+    }
+
+    return {
+      id: ke.id,
+      title: ke.title,
+      workaround: ke.workaround,
+      owner: ke.owner || '',
+      state: ke.state || 'Published',
+      flag: ke.state === 'Needs review' && ke.flag ? ke.flag : null,
+      points: Math.round(points),
+      label: matchLabel(Math.round(points)),
+      codePts,
+      reasons,
+    };
+  });
+
+  results.sort((a, b) => b.points - a.points || b.codePts - a.codePts || (a.id < b.id ? -1 : 1));
+  const candidates = results.filter((r) => !exclude.has(r.id) && r.points >= 10);
+  const best = candidates[0] && candidates[0].points >= STRONG_POINTS ? candidates[0].points : 0;
+  // Shown right away: at most 3 strong suggestions. When the best one is a likely match,
+  // the others must have at least half of its points, so a clear match is not buried in noise.
+  const cutoff = best >= 50 ? Math.max(STRONG_POINTS, best / 2) : STRONG_POINTS;
+  const top = [];
+  const weaker = [];
+  for (const r of candidates) {
+    if (top.length < 3 && (top.length === 0 ? r.points >= STRONG_POINTS : r.points >= cutoff)) top.push(r);
+    else if (weaker.length < 3) weaker.push(r);
+  }
+  const margin = top[1] ? best - top[1].points : best;
+  const confidence = best >= 50 && margin >= 8 ? 'Likely' : best >= STRONG_POINTS ? 'Possible' : 'none';
+  return { empty: false, suggestions: top, weaker, confidence, total: published.length };
+}
+
+const KES = [{"id": "KE-001", "title": "VPN does not connect, error 809", "codes": ["809"], "service": "VPN", "symptoms": ["vpn not working", "remote access fails", "cannot connect from home", "vpn tunnel drops"], "workaround": "1) Restart the VPN client. 2) Turn off Wi-Fi power saving in the network adapter settings. 3) Connect again.", "owner": "Network team"}, {"id": "KE-002", "title": "Account locked after password change", "codes": ["AADSTS50053"], "service": "Login", "symptoms": ["cannot log in", "account locked", "sign-in fails", "password not accepted"], "workaround": "1) Unlock the account in the admin centre. 2) Ask the user to sign out on the phone and sign in with the new password.", "owner": "Identity team"}, {"id": "KE-003", "title": "Printer shows error 0x0000011b", "codes": ["0x0000011b"], "service": "Printing", "symptoms": ["cannot print", "print jobs stuck", "printer offline", "printer error"], "workaround": "1) Remove the printer. 2) Add it again from the print server with the updated driver.", "owner": "Workplace IT"}, {"id": "KE-004", "title": "Outlook keeps asking for the password", "codes": ["AADSTS50126"], "service": "Email", "symptoms": ["outlook password prompt", "email asks for password", "mail sign-in loop"], "workaround": "1) Close Outlook. 2) Remove the saved Office credentials in Credential Manager. 3) Open Outlook and sign in again.", "owner": "Messaging team"}, {"id": "KE-005", "title": "Wi-Fi connected but no internet (169.254 address)", "codes": ["169.254"], "service": "Wi-Fi", "symptoms": ["no internet", "wifi connected but nothing loads", "limited connectivity", "no ip address"], "workaround": "1) Forget the office network. 2) Reconnect. 3) If it still fails, renew the IP address with ipconfig /renew.", "owner": "Network team"}, {"id": "KE-006", "title": "VPN rejects the password, error 691", "codes": ["691"], "service": "VPN", "symptoms": ["vpn says wrong password", "vpn authentication failed", "vpn login error"], "workaround": "1) Check the user signs in with the full user name (user@company.com). 2) If the password expired, reset it in the self-service portal. 3) Connect again.", "owner": "Network team"}, {"id": "KE-007", "title": "VPN fails with error 720", "codes": ["720"], "service": "VPN", "symptoms": ["vpn connection could not be established", "vpn stopped working after update"], "workaround": "1) Open Device Manager and remove the WAN Miniport (IP) and WAN Miniport (IPv6) adapters. 2) Select Action, Scan for hardware changes. 3) Restart the laptop and connect again.", "owner": "Network team"}, {"id": "KE-008", "title": "MFA push notification does not arrive", "codes": [], "service": "Login", "symptoms": ["no mfa prompt", "authenticator not prompting", "approve sign-in request not showing", "mfa code not arriving"], "workaround": "1) Ask the user to open Microsoft Authenticator and pull down to refresh. 2) Check the phone sets date and time automatically. 3) If it still fails, sign in with the one-time code from the app.", "owner": "Identity team"}, {"id": "KE-009", "title": "Password expired, user cannot sign in", "codes": ["AADSTS50055"], "service": "Login", "symptoms": ["password expired", "must change password", "cannot change password from home"], "workaround": "1) Send the user the self-service password reset link. 2) After the change, sign out and in on all devices. 3) On a laptop away from the office, connect to VPN first, then lock and unlock the laptop.", "owner": "Identity team"}, {"id": "KE-010", "title": "Camera not found in Teams (0xA00F4244)", "codes": ["0xA00F4244"], "service": "Teams", "symptoms": ["teams camera black screen", "camera not working in teams", "no video in meeting"], "workaround": "1) In Windows Settings, Privacy, Camera, turn on camera access for apps. 2) Check the camera privacy shutter or the camera key on the keyboard. 3) Restart Teams.", "owner": "Workplace IT"}, {"id": "KE-011", "title": "Teams sign-in fails with error caa70004", "codes": ["caa70004"], "service": "Teams", "symptoms": ["cannot sign in to teams", "teams login error", "teams keeps loading"], "workaround": "1) Quit Teams completely. 2) Reset the app in Settings, Apps, Microsoft Teams, Advanced options. 3) Sign in again.", "owner": "Messaging team"}, {"id": "KE-012", "title": "Outlook cannot connect to the mail server (0x800CCC0E)", "codes": ["0x800CCC0E"], "service": "Email", "symptoms": ["outlook cannot send or receive", "cannot connect to server", "emails stuck in outbox"], "workaround": "1) Check the internet connection. 2) Check that antivirus software is not blocking Outlook. 3) Remove the mail account and add it again.", "owner": "Messaging team"}, {"id": "KE-013", "title": "Email bounces with 550 5.1.1 (recipient not found)", "codes": ["550 5.1.1"], "service": "Email", "symptoms": ["email bounced", "undeliverable message", "recipient address rejected", "delivery failed"], "workaround": "1) Check the recipient address for typos. 2) Remove the wrong address from the Outlook suggestions list by selecting the X next to it. 3) Send the email again.", "owner": "Messaging team"}, {"id": "KE-014", "title": "Shared mailbox does not show in Outlook", "codes": [], "service": "Email", "symptoms": ["shared mailbox missing", "cannot see team mailbox", "shared inbox not in outlook"], "workaround": "1) Check the user has Full Access to the shared mailbox in the admin centre. 2) Wait up to 60 minutes, or add the mailbox in Account settings, More settings, Advanced. 3) Restart Outlook.", "owner": "Messaging team"}, {"id": "KE-015", "title": "OneDrive cannot connect (0x8004de40)", "codes": ["0x8004de40"], "service": "OneDrive", "symptoms": ["onedrive not connecting", "problem connecting to onedrive", "onedrive sign in error"], "workaround": "1) Check the internet connection. 2) In Internet Options, Advanced, make sure TLS 1.2 is turned on. 3) Restart OneDrive.", "owner": "Workplace IT"}, {"id": "KE-016", "title": "OneDrive files stuck on sync pending", "codes": [], "service": "OneDrive", "symptoms": ["files not syncing", "red x on files", "sync pending", "onedrive stuck"], "workaround": "1) Pause and resume syncing from the OneDrive icon. 2) Check the file name has no unsupported characters and the full path is shorter than 400 characters. 3) Restart OneDrive.", "owner": "Workplace IT"}, {"id": "KE-017", "title": "Windows update KB5034441 fails with 0x80070643", "codes": ["0x80070643"], "service": "Windows", "symptoms": ["windows update failed", "update keeps failing", "security update error"], "workaround": "1) This update fails when the recovery partition is too small. 2) Hide the update until IT resizes the partition. 3) Restart the laptop.", "owner": "Workplace IT", "state": "Retired"}, {"id": "KE-018", "title": "BitLocker asks for the recovery key after a BIOS update", "codes": [], "service": "Windows", "symptoms": ["bitlocker recovery screen", "asks for recovery key", "blue recovery screen at start"], "workaround": "1) Verify the user's identity. 2) Find the recovery key in Entra ID (device, BitLocker keys) and read the 48-digit key to the user. 3) After Windows starts, suspend and resume BitLocker protection.", "owner": "Workplace IT"}, {"id": "KE-019", "title": "Blue screen DRIVER_IRQL_NOT_LESS_OR_EQUAL after a driver update", "codes": ["DRIVER_IRQL_NOT_LESS_OR_EQUAL", "0x000000D1"], "service": "Windows", "symptoms": ["blue screen", "laptop crashes", "restarts on its own"], "workaround": "1) Start Windows in Safe Mode. 2) Roll back the latest network or graphics driver in Device Manager. 3) Restart and pause driver updates for 7 days.", "owner": "Workplace IT"}, {"id": "KE-020", "title": "Disk C: is full", "codes": [], "service": "Windows", "symptoms": ["low disk space", "no space left", "c drive is red", "cannot save files"], "workaround": "1) Run Disk Cleanup and include system files. 2) Empty the Downloads folder and the Recycle Bin. 3) Move large files to OneDrive.", "owner": "Service desk"}, {"id": "KE-021", "title": "Excel file is locked for editing by another user", "codes": [], "service": "Office", "symptoms": ["file in use", "opens read only", "locked for editing"], "workaround": "1) Ask the named user to close the file. 2) If the named user is the same person, close all Excel windows and end EXCEL.EXE in Task Manager. 3) For files in SharePoint, open the file in the browser to edit together.", "owner": "Service desk"}, {"id": "KE-022", "title": "Office activation fails with 0xC004F074", "codes": ["0xC004F074"], "service": "Office", "symptoms": ["unlicensed product", "office not activated", "activation error"], "workaround": "1) Connect to the office network or VPN so the activation server can be reached. 2) Run cscript ospp.vbs /act from the Office folder as administrator. 3) Restart Office.", "owner": "Workplace IT"}, {"id": "KE-023", "title": "Acrobat asks to sign in every time", "codes": [], "service": "Adobe", "symptoms": ["adobe sign in again", "acrobat login every time", "adobe license prompt"], "workaround": "1) In Acrobat, select Help, Sign out. 2) Remove the Adobe entries in Credential Manager. 3) Sign in again with the company account.", "owner": "Workplace IT", "state": "Draft"}, {"id": "KE-024", "title": "Browser shows NET::ERR_CERT_DATE_INVALID", "codes": ["NET::ERR_CERT_DATE_INVALID"], "service": "Web", "symptoms": ["your connection is not private", "certificate error", "site not secure warning"], "workaround": "1) Check the date and time on the computer are set automatically. 2) If only one internal site shows it, its certificate expired: assign to the web team. 3) Do not tell users to ignore the warning.", "owner": "Platform team"}, {"id": "KE-025", "title": "Website does not load: DNS_PROBE_FINISHED_NXDOMAIN", "codes": ["DNS_PROBE_FINISHED_NXDOMAIN"], "service": "Network", "symptoms": ["site cannot be reached", "server ip address could not be found", "page not found"], "workaround": "1) Run ipconfig /flushdns in Command Prompt. 2) Check the address is spelled correctly. 3) If many users cannot open the same internal site, assign to the network team.", "owner": "Network team"}, {"id": "KE-026", "title": "Internal app returns HTTP 502 Bad Gateway", "codes": ["HTTP 502"], "service": "Internal apps", "symptoms": ["bad gateway", "app is down", "portal not loading"], "workaround": "1) Check the status page of the app. 2) If the app is down for everyone, raise a major incident for the platform team. 3) Tell the user to try again in 15 minutes.", "owner": "Platform team"}, {"id": "KE-027", "title": "Remote Desktop fails with error 0x204", "codes": ["0x204"], "service": "Remote Desktop", "symptoms": ["cannot connect to remote pc", "rdp not working", "remote desktop cannot connect"], "workaround": "1) Check the user is connected to VPN. 2) Check the computer name and that the remote computer is switched on. 3) Check Windows Firewall on the remote computer allows Remote Desktop.", "owner": "Workplace IT"}, {"id": "KE-028", "title": "Citrix shows SSL error 61", "codes": ["SSL error 61"], "service": "Citrix", "symptoms": ["citrix certificate error", "cannot start citrix app", "not chosen to trust issuer"], "workaround": "1) Install the company root certificate on the device. 2) Restart Citrix Workspace. 3) Open the app again.", "owner": "Workplace IT"}, {"id": "KE-029", "title": "Zoom cannot connect, error 5003", "codes": ["5003"], "service": "Zoom", "symptoms": ["zoom unable to connect", "cannot join zoom meeting", "zoom network error"], "workaround": "1) Check the internet connection. 2) Try another network or turn off VPN for a moment. 3) If many users see it, check that the firewall allows Zoom.", "owner": "Network team"}, {"id": "KE-030", "title": "Cannot set the default printer (0x00000709)", "codes": ["0x00000709"], "service": "Printing", "symptoms": ["operation could not be completed", "default printer error", "printer settings error"], "workaround": "1) In Settings, Printers, turn off Let Windows manage my default printer. 2) Set the default printer again. 3) If it still fails, add the printer again from the print server.", "owner": "Workplace IT", "state": "Retired"}, {"id": "KE-031", "title": "Scan to email fails with 535 5.7.3", "codes": ["535 5.7.3"], "service": "Printing", "symptoms": ["scanner cannot send email", "scan to email not working", "authentication unsuccessful"], "workaround": "1) Check SMTP AUTH is allowed for the scanner mailbox in the Microsoft 365 admin centre. 2) Check the scanner uses smtp.office365.com, port 587 and TLS. 3) Update the password saved in the scanner.", "owner": "Workplace IT"}, {"id": "KE-032", "title": "Access denied to shared drive (0x80070005)", "codes": ["0x80070005"], "service": "File shares", "symptoms": ["no access to shared drive", "new starter cannot open folder", "permission denied on share"], "workaround": "1) Check the user is in the right security group for the share. 2) Ask the user to sign out and in, so the new group applies. 3) If it still fails, check the folder permissions.", "owner": "Service desk"}, {"id": "KE-033", "title": "SharePoint says Access required", "codes": [], "service": "SharePoint", "symptoms": ["need permission to open file", "request access sharepoint", "cannot open shared document"], "workaround": "1) Ask the site owner to share the file or add the user to the site members. 2) Check the user opened it with the company account, not a personal one.", "owner": "Service desk"}, {"id": "KE-034", "title": "Git push fails: Permission denied (publickey)", "codes": ["Permission denied (publickey)"], "service": "GitHub", "symptoms": ["cannot push to github", "git authentication failed", "ssh key not working"], "workaround": "1) Check an SSH key is added to the user's GitHub account. 2) Test it with ssh -T git@github.com. 3) If the organisation uses SSO, authorise the key for the organisation.", "owner": "Platform team"}, {"id": "KE-035", "title": "Docker build fails: no space left on device", "codes": ["no space left on device"], "service": "CI/CD", "symptoms": ["build failed disk full", "pipeline out of disk space", "runner disk full"], "workaround": "1) Run docker system prune on the build runner to remove unused images. 2) Check free disk space on the runner. 3) Run the build again.", "owner": "Platform team"}, {"id": "KE-036", "title": "Pod in CrashLoopBackOff after a deploy", "codes": ["CrashLoopBackOff"], "service": "Kubernetes", "symptoms": ["service keeps restarting", "pod crashing", "deployment failed"], "workaround": "1) Run kubectl logs with --previous on the pod to see the error. 2) If it started after the last deploy, roll back with kubectl rollout undo. 3) Raise a problem for the owning team.", "owner": "Platform team", "state": "Draft"}, {"id": "KE-037", "title": "Container killed: OOMKilled (exit code 137)", "codes": ["OOMKilled"], "service": "Kubernetes", "symptoms": ["out of memory", "container restarts", "exit code 137"], "workaround": "1) Check the memory use of the pod. 2) As a short-term fix, raise the memory limit of the deployment. 3) Raise a problem to find the memory leak.", "owner": "Platform team"}, {"id": "KE-038", "title": "Database not reachable: ORA-12541 no listener", "codes": ["ORA-12541"], "service": "Database", "symptoms": ["cannot connect to database", "app cannot reach oracle", "tns no listener"], "workaround": "1) Check the listener on the database server with lsnrctl status. 2) If it is stopped, start it with lsnrctl start. 3) Check the app uses the right host and port.", "owner": "DBA team"}, {"id": "KE-039", "title": "SQL Server login failed (error 18456)", "codes": ["18456"], "service": "Database", "symptoms": ["login failed for user", "app cannot log in to sql server", "database login error"], "workaround": "1) Check the user name and password the app uses. 2) Check the login is not disabled and the password has not expired. 3) Check the server allows SQL Server authentication.", "owner": "DBA team"}, {"id": "KE-040", "title": "Laptop cannot join office Wi-Fi (certificate)", "codes": [], "service": "Wi-Fi", "symptoms": ["cannot connect to office wifi", "wifi asks for certificate", "wireless authentication failed"], "workaround": "1) Forget the office Wi-Fi network. 2) Connect to VPN or a cable for 10 minutes so the device certificate can renew. 3) Connect to the office Wi-Fi again.", "owner": "Network team"}];
+const EXAMPLES = [{"summary": "VPN keeps failing with error 809", "description": "Working from home today, the VPN shows error 809 every time I try to connect."}, {"summary": "Outlook asks for my password all the time", "description": "Since yesterday a password window pops up in Outlook every few minutes."}, {"summary": "No internet on the wifi", "description": "Wifi says connected but nothing loads. My IP address starts with 169.254."}, {"summary": "Teams will not let me sign in", "description": "Teams shows error caa70004 when I open it."}, {"summary": "Access denied on the finance shared drive", "description": "New starter cannot open the finance folder, Windows says error 0x80070005."}, {"summary": "Reports app cannot reach the database", "description": "Opening reports gives ORA-12541: TNS:no listener."}];
+// Example usage counts, so a few suggestions show "used before" like in a real team.
+const USES = { 'KE-001': 1, 'KE-004': 3, 'KE-008': 2, 'KE-013': 1 };
+const MATCH_LABELS = { Likely: ['Likely match', 'ok'], Possible: ['Possible match', 'prog'], Weak: ['Weak match', 'def'] };
+const TICKET = 'HD-1042';
+const EXAMPLE_COUNT = KES.length;
+const APPLIED_PREFIX = 'Workaround from known error';
+const NO_COMMENTS = '<p class="empty-comments">No comments yet. Click Use workaround on a suggestion.</p>';
+
+let index = buildIndex(KES);
+const $ = (id) => document.getElementById(id);
+const summaryEl = $('summary');
+const descEl = $('description');
+const resultsEl = $('results');
+const actionsEl = $('panel-actions');
+const metaEl = $('meta');
+const commentsEl = $('comments');
+const labelsEl = $('labels');
+const toastEl = $('toast');
+const nudgeEl = $('beta-nudge');
+
+// After the first workaround or saved known error, the panel shows how to get the app. It stays for the rest of the visit.
+function showNudge() {
+  nudgeEl.hidden = false;
+}
+// Links to the sign-up scroll to it and put the cursor in the email field.
+document.querySelectorAll('a[href="#beta"]').forEach((a) => a.addEventListener('click', (e) => {
+  e.preventDefault();
+  const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('beta').scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+  const email = $('kit-email');
+  if (email) email.focus({ preventScroll: true });
+}));
+
+// What happened on this ticket. It starts again when the ticket text changes or another example is picked.
+function freshTicket() {
+  return { applied: new Map(), notRelevant: new Set(), noneFit: false, showMore: false, comments: [], labels: [] };
+}
+let ticket = freshTicket();
+let last = null;
+let timer = null;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function stepsOf(text) {
+  const parts = String(text).split(/\s*(?=\b\d+\)\s)/).map((p) => p.replace(/^\d+\)\s*/, '').trim()).filter(Boolean);
+  return parts.length > 1 ? parts : [String(text)];
+}
+// The steps one per line, as they are put into the Use workaround window.
+function stepsText(text) {
+  const parts = stepsOf(text);
+  return parts.length > 1 ? parts.map((x, i) => (i + 1) + ') ' + x).join('\n') : parts[0];
+}
+function splitItems(value, pattern) {
+  return String(value || '').split(pattern).map((x) => x.trim()).filter(Boolean);
+}
+
+// Finds things that look like error codes in the ticket, to fill in Save as known error (same rules as the app).
+function extractCodes(text, issueKey) {
+  const found = [];
+  const add = (code) => {
+    const c = String(code).trim();
+    if (c && !found.some((f) => f.toLowerCase() === c.toLowerCase())) found.push(c);
+  };
+  const value = String(text || '');
+  const prefix = String(issueKey || '').split('-')[0].toUpperCase();
+  let m;
+  const hex = /\b0x[0-9a-f]{4,8}\b/gi;
+  while ((m = hex.exec(value))) add(m[0]);
+  const named = /\b[A-Z]{2,6}-\d{3,6}\b/g;
+  while ((m = named.exec(value))) {
+    if (m[0].split('-')[0] !== prefix) add(m[0]);
+  }
+  const numbered = /\b(?:error|code)\s*[:#]?\s*(\d{3,5})\b/gi;
+  while ((m = numbered.exec(value))) add(m[1]);
+  return found.slice(0, 5);
+}
+
+let toastTimer = null;
+function toast(title, text) {
+  toastEl.innerHTML = '<strong>' + esc(title) + '</strong><span>' + esc(text) + '</span>';
+  requestAnimationFrame(() => toastEl.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastEl.classList.remove('show');
+    toastTimer = setTimeout(() => { toastEl.innerHTML = ''; }, 250);
+  }, 4500);
+}
+
+function renderLabels() {
+  labelsEl.innerHTML = ticket.labels.length
+    ? ticket.labels.map((l) => '<span class="label-chip">' + esc(l) + '</span>').join('')
+    : '<span class="no-labels">None</span>';
+}
+function addLabel(label) {
+  if (!ticket.labels.includes(label)) ticket.labels.push(label);
+}
+
+function renderComments() {
+  if (!ticket.comments.length) {
+    commentsEl.innerHTML = NO_COMMENTS;
+    return;
+  }
+  commentsEl.innerHTML = ticket.comments.map((c) =>
+    '<div class="comment' + (c.internal ? '' : ' public') + '">' +
+    '<span class="tag">' + (c.internal ? 'Internal note, visible to agents only' : 'Reply to customer') + '</span>' +
+    (c.heading ? '<p><strong>' + esc(c.heading) + '</strong></p>' : '') +
+    '<p>' + esc(c.text) + '</p></div>'
+  ).join('');
+}
+
+function renderTable() {
+  $('ke-rows').innerHTML = KES.map((k) =>
+    '<tr><td>' + esc(k.id) + '</td><td>' + esc(k.title) + '</td><td>' + esc((k.codes || []).join(', ') || 'none') + '</td><td>' + esc(k.service || '') + '</td><td>' + esc(k.state || 'Published') + '</td></tr>'
+  ).join('');
+  const added = KES.length - EXAMPLE_COUNT;
+  $('kelist-summary').textContent = added > 0
+    ? 'See the ' + EXAMPLE_COUNT + ' example known errors and the ' + (added === 1 ? 'one' : added) + ' you saved'
+    : 'See the ' + EXAMPLE_COUNT + ' example known errors';
+}
+
+function card(s, i) {
+  const [labelText, cls] = MATCH_LABELS[s.label] || MATCH_LABELS.Weak;
+  const used = ticket.applied.get(s.id);
+  const outdated = s.state === 'Needs review';
+  const note = s.flag && s.flag.note ? s.flag.note : '';
+  return '<article class="card' + (i === 0 && s.label === 'Likely' ? ' top-card' : '') + '">' +
+    '<div class="card-head"><div><span class="ke-id">' + esc(s.id) + '</span><h4>' + esc(s.title) + '</h4></div>' +
+    '<span class="loz ' + cls + '">' + labelText + '</span></div>' +
+    (outdated ? '<div class="msg warn-msg"><strong>Marked as outdated</strong><p>An agent marked this as outdated' + (note ? ': ' + esc(note) : '.') + ' Check the steps before you use them.</p></div>' : '') +
+    '<p class="why"><strong>Why</strong> ' + esc(s.reasons.join('; ')) + '</p>' +
+    '<p class="steps-title">Workaround</p><ol class="steps">' + stepsOf(s.workaround).map((x) => '<li>' + esc(x) + '</li>').join('') + '</ol>' +
+    (s.owner ? '<p class="owner">Owner ' + esc(s.owner) + '</p>' : '') +
+    '<div class="card-actions">' +
+    '<button class="apply' + (i === 0 ? '' : ' secondary') + '" type="button" data-act="use" data-id="' + esc(s.id) + '"' + (used ? ' disabled' : '') + '>' + (used ? 'Used in this ticket' : 'Use workaround') + '</button>' +
+    (used ? '' : '<button class="btn-subtle" type="button" data-act="notrel" data-id="' + esc(s.id) + '">Not relevant</button>') +
+    (outdated ? '' : '<button class="btn-subtle" type="button" data-act="outdated" data-id="' + esc(s.id) + '">Outdated</button>') +
+    '</div>' +
+    (used ? '<p class="noted">' + (used === 'customer' ? 'Sent to the customer as a reply. See Activity.' : 'Added as an internal note. See Activity.') + '</p>' : '') +
+    '</article>';
+}
+
+function render() {
+  renderLabels();
+  renderComments();
+  const incident = { summary: summaryEl.value, description: descEl.value };
+  if (!incident.summary.trim() && !incident.description.trim()) {
+    last = null;
+    resultsEl.innerHTML = '<p class="none">Type a ticket summary or pick an example to see which known error matches.</p>';
+    actionsEl.innerHTML = '';
+    metaEl.textContent = '';
+    return;
+  }
+  const t0 = performance.now();
+  const r = rankIndex(index, incident, USES, { exclude: ticket.notRelevant });
+  const ms = performance.now() - t0;
+  last = r;
+  metaEl.textContent = 'Checked ' + r.total + ' known errors in ' + (ms < 1 ? 'under 1' : Math.round(ms)) + ' ms.';
+  const strong = r.suggestions;
+  const weaker = r.weaker || [];
+  const shown = ticket.showMore ? strong.concat(weaker) : strong;
+  resultsEl.innerHTML =
+    (strong.length ? '' : '<div class="msg warn-msg"><strong>No strong match</strong><p>None of the ' + r.total + ' known errors fits this ticket well enough. Paste the exact error code or error message into the description to improve the suggestions, or save this ticket as a new known error.</p></div>') +
+    shown.map(card).join('');
+  const buttons = [];
+  if (strong.length && ticket.applied.size === 0 && !ticket.noneFit) buttons.push('<button class="btn-subtle" type="button" data-act="nonefit">None of these fit</button>');
+  if (weaker.length && !ticket.showMore) buttons.push('<button class="btn-subtle" type="button" data-act="more">Show more matches (' + weaker.length + ')</button>');
+  buttons.push('<button class="btn-subtle" type="button" data-act="save">Save as known error</button>');
+  actionsEl.innerHTML = buttons.join('') +
+    (strong.length && ticket.applied.size === 0 && ticket.noneFit ? '<p class="noted">Noted. In the app this is counted on the Statistics tab, so you can see how often the suggestions are right.</p>' : '');
+}
+
+function findSuggestion(id) {
+  if (!last) return null;
+  return last.suggestions.concat(last.weaker || []).find((x) => x.id === id) || null;
+}
+function focusFirst(selectors) {
+  for (const sel of selectors) {
+    const el = document.querySelector(sel);
+    if (el) { el.focus(); return; }
+  }
+}
+
+// Use workaround: the steps open in a window, the agent can change them and add them as an internal note or a reply.
+const useDlg = $('use-dlg');
+let using = null;
+function openUse(s) {
+  using = s;
+  $('use-title').textContent = 'Use workaround from ' + s.id;
+  $('use-sub').textContent = s.title;
+  $('use-text').value = stepsText(s.workaround);
+  $('use-error').hidden = true;
+  useDlg.showModal();
+  $('use-text').focus();
+}
+function sendWorkaround(channel) {
+  if (!using) return;
+  const text = $('use-text').value.trim();
+  if (!text) {
+    $('use-error').textContent = 'The text is empty. Write the steps first.';
+    $('use-error').hidden = false;
+    return;
+  }
+  const internal = channel === 'internal';
+  ticket.comments.unshift({ internal, heading: internal ? APPLIED_PREFIX + ' ' + using.id + ': ' + using.title : '', text });
+  ticket.applied.set(using.id, channel);
+  addLabel('kedb-' + using.id);
+  useDlg.close();
+  toast(internal ? 'Workaround added' : 'Reply sent', internal ? 'Added as an internal note on ' + TICKET + '.' : 'The customer gets the steps as a reply on ' + TICKET + '.');
+  using = null;
+  render();
+  showNudge();
+  $('panel-heading').focus();
+}
+$('use-internal').addEventListener('click', () => sendWorkaround('internal'));
+$('use-customer').addEventListener('click', () => sendWorkaround('customer'));
+
+// Outdated: the known error needs a review. Agents still see it, with a warning.
+const flagDlg = $('flag-dlg');
+let flagging = null;
+function openOutdated(s) {
+  flagging = s;
+  $('flag-title').textContent = 'Mark ' + s.id + ' as outdated?';
+  $('flag-note').value = '';
+  flagDlg.showModal();
+  $('flag-note').focus();
+}
+$('flag-confirm').addEventListener('click', () => {
+  if (!flagging) return;
+  const ke = KES.find((k) => k.id === flagging.id);
+  if (ke) {
+    ke.state = 'Needs review';
+    ke.flag = { note: $('flag-note').value.trim().slice(0, 500), issueKey: TICKET };
+  }
+  index = buildIndex(KES);
+  flagDlg.close();
+  toast('Marked as outdated', flagging.id + ' now needs a review. Agents still see it with a warning until the owner checks it.');
+  flagging = null;
+  renderTable();
+  render();
+  $('panel-heading').focus();
+});
+
+// Save as known error: filled in from the ticket. The last reply to the customer becomes the workaround.
+const saveDlg = $('save-dlg');
+function openSave() {
+  const summary = summaryEl.value.trim();
+  const description = descEl.value;
+  const reply = ticket.comments.find((c) => !c.internal);
+  const lastComment = reply ? reply.text : '';
+  const firstLine = description.split(/\r?\n/).map((l) => l.trim()).find(Boolean) || '';
+  $('save-title').value = summary.slice(0, 200);
+  $('save-codes').value = extractCodes(summary + '\n' + description, TICKET).join(', ');
+  $('save-service').value = '';
+  $('save-symptoms').value = firstLine && firstLine !== summary ? firstLine.slice(0, 200) : '';
+  $('save-workaround').value = lastComment.slice(0, 5000);
+  $('save-owner').value = '';
+  $('save-intro').textContent = lastComment
+    ? 'Filled in from ' + TICKET + '. Check the workaround, it comes from the last comment. Next time this problem comes in, agents see it here.'
+    : 'Filled in from ' + TICKET + '. Write the steps that fixed it. Next time this problem comes in, agents see it here.';
+  $('save-error').hidden = true;
+  saveDlg.showModal();
+  (lastComment ? $('save-title') : $('save-workaround')).focus();
+}
+$('save-confirm').addEventListener('click', () => {
+  const title = $('save-title').value.trim().slice(0, 200);
+  const workaround = $('save-workaround').value.trim().slice(0, 5000);
+  const error = !title
+    ? 'Add a title. For example VPN does not connect, error 809.'
+    : !workaround ? 'Add a workaround. Agents see it when this known error matches an incident.' : '';
+  if (error) {
+    $('save-error').textContent = error;
+    $('save-error').hidden = false;
+    return;
+  }
+  const next = KES.reduce((max, k) => Math.max(max, parseInt(String(k.id).replace(/\D/g, ''), 10) || 0), 0) + 1;
+  const id = 'KE-' + String(next).padStart(3, '0');
+  KES.push({
+    id,
+    title,
+    codes: splitItems($('save-codes').value, /[\n,]/),
+    service: $('save-service').value.trim().slice(0, 100),
+    symptoms: splitItems($('save-symptoms').value, /\n/),
+    workaround,
+    owner: $('save-owner').value.trim().slice(0, 100),
+    state: 'Published',
+  });
+  index = buildIndex(KES);
+  addLabel('kedb-' + id);
+  saveDlg.close();
+  toast('Known error saved', id + ' ' + title + '. It is linked to ' + TICKET + '.');
+  renderTable();
+  render();
+  showNudge();
+  $('panel-heading').focus();
+});
+
+// Cancel buttons, and a click on the dark area around a window, close it.
+// An error message goes away as soon as the visitor changes the text.
+document.querySelectorAll('.dlg').forEach((dlg) => {
+  dlg.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => dlg.close()));
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('input', () => { dlg.querySelectorAll('.dlg-error').forEach((el) => { el.hidden = true; }); });
+});
+
+// Buttons on the cards and under them.
+$('results').closest('.side').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const act = b.dataset.act;
+  const s = b.dataset.id ? findSuggestion(b.dataset.id) : null;
+  if (act === 'use' && s) openUse(s);
+  else if (act === 'outdated' && s) openOutdated(s);
+  else if (act === 'notrel' && s) {
+    // Not suggested for this ticket again. The next best one shows up, if there is one.
+    ticket.notRelevant.add(s.id);
+    render();
+    focusFirst(['#results .apply:not([disabled])', '#panel-actions button', '#panel-heading']);
+  } else if (act === 'nonefit') {
+    ticket.noneFit = true;
+    render();
+    focusFirst(['#panel-actions button', '#panel-heading']);
+  } else if (act === 'more') {
+    const before = last ? last.suggestions.length : 0;
+    ticket.showMore = true;
+    render();
+    const cards = resultsEl.querySelectorAll('.card');
+    const first = cards[before] && cards[before].querySelector('button');
+    if (first) first.focus(); else $('panel-heading').focus();
+  } else if (act === 'save') openSave();
+});
+
+function schedule() {
+  clearTimeout(timer);
+  timer = setTimeout(() => { ticket = freshTicket(); render(); }, 140);
+}
+summaryEl.addEventListener('input', () => { setPressed(-1); schedule(); });
+descEl.addEventListener('input', () => { setPressed(-1); schedule(); });
+
+const chips = Array.from(document.querySelectorAll('.chip'));
+function setPressed(n) { chips.forEach((c, i) => c.setAttribute('aria-pressed', i === n ? 'true' : 'false')); }
+chips.forEach((c, i) => c.addEventListener('click', () => {
+  summaryEl.value = EXAMPLES[i].summary;
+  descEl.value = EXAMPLES[i].description;
+  setPressed(i);
+  ticket = freshTicket();
+  render();
+}));
+
+renderTable();
+// Start with the first example, so the page shows a real result right away.
+summaryEl.value = EXAMPLES[0].summary;
+descEl.value = EXAMPLES[0].description;
+setPressed(0);
+render();
+</script>
+
+<script src="https://f.convertkit.com/ckjs/ck.5.js"></script>
+</body>
+</html>
